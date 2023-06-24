@@ -73,7 +73,17 @@ app.post("/", function(req, res){
 });
 
 app.post("/delete", function(req, res){
-  console.log(req.body.checkbox)
+  const checkedItemId = req.body.checkbox
+
+  Item.findByIdAndRemove(checkedItemId)
+     .then( () =>{
+      console.log("Item deleted!")
+     })
+     .catch((err) =>{
+      console.log(err)
+     })
+
+  res.redirect("/")
 })
 
 app.get("/work", function(req,res){
