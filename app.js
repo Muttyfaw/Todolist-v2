@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
 //Database Connection (mongoDB)
-mongoose.connect("mongodb://127.0.0.1:27017/todolistDB")
+mongoose.connect("mongodb+srv://MuttyFaw:zee%402000@cluster0.dau9uhz.mongodb.net/todolistDB")
 
 const itemsSchema = ({
    name : String
