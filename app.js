@@ -4,6 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const date = require(__dirname + "/date.js");
 const mongoose = require("mongoose")
+const _ = require("lodash")
 
 const app = express();
 
@@ -61,14 +62,27 @@ app.get("/", function(req, res) {
   })
 
 app.get("/:customListName", function (req, res) {
-    const customListName = req.params.customListName
+    const customListName = _.capitalize(req.params.customListName)
    
-    const list = new List ({
-      name: customListName,
-      items: defaultItems
+
+    List.findOne({name: customListName})
+    .then ((foundList) => {
+        if(!foundList){
+          const list = new List({
+            name: customListName,
+            items: defaultItems
+          })
+
+          list.save()
+          res.redirect("/" + customListName)
+        }else{
+        res.render("list",{ listTitle: foundList.name, newListItems: foundList.items });
+        }
+    })
+    .catch((err) => {
+      console.log(err)
     })
 
-    list.save()
   })
 
 const day = date.getDate();
@@ -79,27 +93,50 @@ const day = date.getDate();
 app.post("/", function(req, res){
 
   const itemName = req.body.newItem;
+  const listName = req.body.list
 
   const item = new Item ({
     name: itemName
   })
 
-  item.save()
-  res.redirect("/")
+  if(listName == "Today"){
+    item.save()
+    res.redirect("/")
+  }else{
+    List.findOne({name: listName})
+       .then((foundList) =>{
+        foundList.items.push(item)
+        foundList.save()
+        res.redirect("/"+ listName)
+       })
+       .catch((err) =>{
+        console.log(err)})
+    }  
 });
 
 app.post("/delete", function(req, res){
   const checkedItemId = req.body.checkbox
+  const listName = req.body.listName
 
-  Item.findByIdAndRemove(checkedItemId)
-     .then( () =>{
-      console.log("Item deleted!")
-     })
-     .catch((err) =>{
-      console.log(err)
-     })
+  if(listName == "Today"){
+    Item.findByIdAndRemove(checkedItemId)
+      .then(() => {
+        console.log("Item deleted!")
+      })
+      .catch((err) => {
+        console.log(err)
+      })
 
-  res.redirect("/")
+    res.redirect("/")
+  }else {
+      List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}) 
+        .then((foundList, err) =>{
+          if(!err){
+            res.redirect("/" + listName)
+            console.log(listName)
+          }
+        })
+  } 
 })
 
 
